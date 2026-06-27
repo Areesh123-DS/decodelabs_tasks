@@ -1,6 +1,6 @@
 # AI Intern — DecodeLabs Assignments
 
-Three Tasks built with Python, covering rule-based NLP, machine learning classification, and intelligent career recommendation.
+Tasks built with Python, covering rule-based NLP, machine learning classification, and intelligent career recommendation.
 
 ---
 
