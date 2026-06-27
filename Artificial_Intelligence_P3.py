@@ -3,23 +3,22 @@ import pandas as pd
 import numpy as np
 import math
 
-# --- STEP 1: LOAD & PREPARE DATA ---
-@st.cache_data
+@st.cache_data # for fast loading from the cache every time
 def load_data():
     df = pd.read_csv("raw_skills.csv")
     return df
 
 try:
     df = load_data()
-    ROLE_COL = 'role' 
-    SKILLS_COL = 'skills'
+    Role_col = 'role' 
+    Skills_col = 'skills'
 except FileNotFoundError:
-    st.error("Could not find 'raw_skills.csv'. Please place it in the same folder.")
+    st.error("Could not find 'raw_skills.csv'.")
     st.stop()
 
-# --- STREAMLIT UI ---
-st.title("🎯 100% Pure AI Tech Stack Recommender")
-st.write("Calculates TF-IDF Matrix and Cosine Similarity entirely from scratch.")
+
+st.title("🎯 AI Tech Stack Recommender")
+st.write("Calculates TF-IDF Matrix and Cosine Similarity.")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -29,21 +28,21 @@ with col2:
 with col3:
     skill3 = st.text_input("Skill 3", placeholder="e.g., SQL").strip()
 
-# --- STEP 2: MANUAL RECOMMENDATION ENGINE ---
+
 if st.button("Recommend My Career Path"):
     if skill1 and skill2 and skill3:
         
         # Keep multi-word phrases intact as individual skill tokens
         user_doc = [skill1.lower(), skill2.lower(), skill3.lower()]
         
-        # Parse dataset documents cleanly by comma
+        # Parse skills by comma
         documents = []
-        for text in df[SKILLS_COL].tolist():
+        for text in df[Skills_col].tolist():
             text_str = str(text).lower()
             tokens = [t.strip() for t in text_str.split(',') if t.strip()]
             documents.append(tokens)
         
-        # Build the Global Vocabulary
+        # vocabulary of unique words
         vocabulary = set()
         for doc in documents:
             vocabulary.update(doc)
@@ -60,7 +59,7 @@ if st.button("Recommend My Career Path"):
             doc_count = sum(1 for doc in documents if word in doc)
             idf_dict[word] = math.log(num_docs / (1 + doc_count))
             
-        # Helper Function to convert any tokenized document into a manual TF-IDF Vector
+      #for calculating tf-idf vectors
         def compute_tfidf_vector(tokens):
             vector = np.zeros(vocab_size)
             if not tokens:
@@ -77,11 +76,10 @@ if st.button("Recommend My Career Path"):
                     vector[vocab_index[token]] = tf * idf
             return vector
 
-        # Build the TF-IDF Arrays
         job_vectors = np.array([compute_tfidf_vector(doc) for doc in documents])
         user_vector = compute_tfidf_vector(user_doc)
         
-        # Manual Cosine Similarity Calculation Loop
+        # for calculating cosine similarity
         similarity_scores = []
         user_magnitude = np.sqrt(np.sum(user_vector ** 2))
         
@@ -95,21 +93,18 @@ if st.button("Recommend My Career Path"):
                 score = dot_product / (user_magnitude * job_magnitude)
             similarity_scores.append(score)
             
-        # --- STEP 3: RANKING & DELIVERABLES ---
+
         df['Similarity Score'] = similarity_scores
         top_recommendations = df.sort_values(by='Similarity Score', ascending=False).head(3)
-        
-        # Filter zero-score matches
         valid_recommendations = top_recommendations[top_recommendations['Similarity Score'] > 0]
         
-        # --- STEP 4: DISPLAY OUTPUT ---
         if not valid_recommendations.empty:
             st.success("### 🚀 Your Top Recommended Career Paths:")
             for index, row in valid_recommendations.iterrows():
                 with st.container():
-                    st.markdown(f"#### **{row[ROLE_COL]}**")
-                    st.caption(f"Pure Core Cosine Match Score: {round(row['Similarity Score'] * 100, 2)}%")
-                    st.write(f"**Dataset Core Skills:** {row[SKILLS_COL]}")
+                    st.markdown(f"#### **{row[Role_Col]}**")
+                    st.caption(f"Cosine Match Score: {round(row['Similarity Score'] * 100, 2)}%")
+                    st.write(f"**Dataset Core Skills:** {row[Skills_col]}")
                     st.markdown("---")
         else:
             st.warning("No matches found with a similarity score greater than 0. Try entering different keywords!")
